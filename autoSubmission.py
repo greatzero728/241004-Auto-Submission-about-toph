@@ -20,7 +20,17 @@ COMMON_URL_PREFIX = "https://toph.co/p/"
 SUBMISSION_DIR = './submission'
 CPP_PROBLEMS_DIR = './cpp_problems'
 
+def ensure_directories_exist():
+    """Ensure that submission and cpp_problems directories exist."""
+    if not os.path.exists(SUBMISSION_DIR):
+        os.makedirs(SUBMISSION_DIR)
+        print(f"Created directory: {SUBMISSION_DIR}")
+    if not os.path.exists(CPP_PROBLEMS_DIR):
+        os.makedirs(CPP_PROBLEMS_DIR)
+        print(f"Created directory: {CPP_PROBLEMS_DIR}")
+
 def move_and_replace_cpp_file():
+    """Move the .cpp file from submission directory to cpp_problems directory."""
     cpp_files = [f for f in os.listdir(SUBMISSION_DIR) if f.endswith('.cpp')]
     
     if not cpp_files:
@@ -29,9 +39,16 @@ def move_and_replace_cpp_file():
 
     cpp_file = cpp_files[0]
     
-    # Move and replace the cpp file in the cpp_problems directory
+    # Define source and destination paths
     src = os.path.join(SUBMISSION_DIR, cpp_file)
     dst = os.path.join(CPP_PROBLEMS_DIR, cpp_file)
+    
+    # Move and replace the cpp file if it exists in cpp_problems
+    if os.path.exists(dst):
+        print(f"File {cpp_file} already exists in cpp_problems. Replacing it.")
+    else:
+        print(f"Moving {cpp_file} to cpp_problems.")
+    
     shutil.move(src, dst)
     print(f"{cpp_file} moved to cpp_problems.")
 
@@ -75,7 +92,7 @@ def submit_cpp_file(driver, url, cpp_file_path):
         available_languages = [option.get_attribute('innerHTML') for option in language_dropdown.options]
         if "C++23 GCC 13.2" not in available_languages:
             print("Available languages:", available_languages)
-            print("There isn't 'C++23 GCC 13.2' language so, this task is invalid: ")
+            print("There isn't 'C++23 GCC 13.2' language so, this task is an invalid task.\n\n\n")
             return
 
         print("Selecting language 'C++23 GCC 13.2'...")
@@ -87,7 +104,7 @@ def submit_cpp_file(driver, url, cpp_file_path):
         file_input.send_keys(cpp_file_absolute_path)
 
         print("File uploaded successfully.")
-        driver.maximize_window()
+        
         submit_button = WebDriverWait(driver, WAIT_TIME).until(
             EC.element_to_be_clickable((By.CSS_SELECTOR, "#pnlSubmit > div.panel__foot.-shade > div > button"))
         )
@@ -116,6 +133,7 @@ def check_submission_result(driver):
 
             if verdict in ["Accepted", "Wrong answer", "CPU limit exceeded", "Memory limit exceeded", "Output limit exceeded", "Runtime error", "Compilation error", "Internal error"]:
                 print(f"Problem: {problem_link}, Result: {verdict}")
+                print("\n\n\n")  # Add 3 line breaks after verdict
                 break
             else:
                 print(f"Problem: {problem_link}, Result: Pending")
@@ -123,7 +141,11 @@ def check_submission_result(driver):
         print(f"Error while checking result: {e}")
 
 def main():
+    # Ensure the directories exist at the beginning of the program
+    ensure_directories_exist()
+
     driver = webdriver.Chrome()
+    driver.maximize_window()
 
     try:
         driver.get("https://toph.co")
